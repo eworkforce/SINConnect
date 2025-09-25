@@ -105,7 +105,7 @@ const UploadDocument: React.FC = () => {
           <Card sx={{ mb: 3, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
             <CardContent>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={8}>
+                <Grid size={{xs: 12, md: 8}}>
                   <Typography variant="h6" gutterBottom>
                     👋 Bonjour {userProfile.profile.name}
                   </Typography>
@@ -113,7 +113,7 @@ const UploadDocument: React.FC = () => {
                     Vous êtes connecté en tant que <strong>{getRoleDisplayName(userProfile.role)}</strong>
                   </Typography>
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{xs: 12, md: 4}}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <Chip 
                       label={`Taille max: ${userPermissions?.maxFileSize}MB`}
@@ -181,7 +181,7 @@ const UploadDocument: React.FC = () => {
           </Typography>
           
           <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{xs: 12, md: 4}}>
               <Typography variant="subtitle2" gutterBottom>
                 📄 Documents
               </Typography>
@@ -192,7 +192,7 @@ const UploadDocument: React.FC = () => {
               </Typography>
             </Grid>
             
-            <Grid item xs={12} md={4}>
+            <Grid size={{xs: 12, md: 4}}>
               <Typography variant="subtitle2" gutterBottom>
                 🖼️ Images
               </Typography>
@@ -203,7 +203,7 @@ const UploadDocument: React.FC = () => {
               </Typography>
             </Grid>
             
-            <Grid item xs={12} md={4}>
+            <Grid size={{xs: 12, md: 4}}>
               <Typography variant="subtitle2" gutterBottom>
                 🎥 Vidéos
               </Typography>

@@ -131,7 +131,7 @@ const Documents: React.FC = () => {
 
         {/* Stats Overview */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'primary.light', color: 'primary.contrastText' }}>
               <Typography variant="h4" fontWeight="bold">
                 {documentStats.total}
@@ -142,7 +142,7 @@ const Documents: React.FC = () => {
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'secondary.light', color: 'secondary.contrastText' }}>
               <Typography variant="h4" fontWeight="bold">
                 {Object.keys(documentStats.categories).length}
@@ -153,7 +153,7 @@ const Documents: React.FC = () => {
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'success.contrastText' }}>
               <Typography variant="h4" fontWeight="bold">
                 {documentStats.recentUploads}
@@ -164,7 +164,7 @@ const Documents: React.FC = () => {
             </Paper>
           </Grid>
           
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{xs: 12, sm: 6, md: 3}}>
             <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.light', color: 'warning.contrastText' }}>
               <Typography variant="h4" fontWeight="bold">
                 {documentStats.pendingReview}
@@ -183,7 +183,7 @@ const Documents: React.FC = () => {
         
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {quickActions.filter(canAccessAction).map((action, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
+            <Grid size={{xs: 12, sm: 6, md: 4}} key={index}>
               <Card 
                 sx={{ 
                   height: '100%', 
@@ -237,7 +237,7 @@ const Documents: React.FC = () => {
 
         <Grid container spacing={3}>
           {/* Categories Overview */}
-          <Grid item xs={12} md={8}>
+          <Grid size={{xs: 12, md: 8}}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
                 📚 Catégories de documents
@@ -268,7 +268,7 @@ const Documents: React.FC = () => {
           </Grid>
 
           {/* Recent Activity */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{xs: 12, md: 4}}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
                 <TrendingUp sx={{ mr: 1 }} />

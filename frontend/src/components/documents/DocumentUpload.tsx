@@ -457,42 +457,42 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                 <ListItemText
                   primary={uploadFile.file.name}
                   secondary={
-                    <Box>
-                      <Typography variant="caption" display="block">
+                    <React.Fragment>
+                      <Typography variant="caption" component="span" display="block">
                         {formatFileSize(uploadFile.file.size)}
                       </Typography>
                       
                       {uploadFile.progress.status === 'uploading' && (
-                        <Box sx={{ mt: 1 }}>
+                        <Box sx={{ mt: 1 }} component="span">
                           <LinearProgress 
                             variant="determinate" 
                             value={uploadFile.progress.progress}
                             color={getStatusColor(uploadFile.progress.status) as any}
                           />
-                          <Typography variant="caption">
+                          <Typography variant="caption" component="span">
                             {Math.round(uploadFile.progress.progress)}%
                           </Typography>
                         </Box>
                       )}
                       
                       {uploadFile.progress.status === 'completed' && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }} component="span">
                           <CheckCircle color="success" sx={{ fontSize: 16, mr: 0.5 }} />
-                          <Typography variant="caption" color="success.main">
+                          <Typography variant="caption" color="success.main" component="span">
                             Téléchargé avec succès
                           </Typography>
                         </Box>
                       )}
                       
                       {uploadFile.progress.error && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }} component="span">
                           <Error color="error" sx={{ fontSize: 16, mr: 0.5 }} />
-                          <Typography variant="caption" color="error">
+                          <Typography variant="caption" color="error" component="span">
                             {uploadFile.progress.error}
                           </Typography>
                         </Box>
                       )}
-                    </Box>
+                    </React.Fragment>
                   }
                 />
                 
@@ -542,7 +542,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           <Box component="form" onSubmit={handleSubmit(handleUpload)}>
             <Grid container spacing={3}>
               {/* Title */}
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Controller
                   name="title"
                   control={control}
@@ -560,7 +560,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* Description */}
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Controller
                   name="description"
                   control={control}
@@ -580,7 +580,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* Summary */}
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Controller
                   name="summary"
                   control={control}
@@ -600,7 +600,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* Category and Priority */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Controller
                   name="category"
                   control={control}
@@ -634,7 +634,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Controller
                   name="priority"
                   control={control}
@@ -669,7 +669,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* Tags */}
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Box>
                   <Typography variant="subtitle2" gutterBottom>
                     Tags ({tags.length}/10)
@@ -709,7 +709,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* Medical Specialties */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Controller
                   name="medicalSpecialty"
                   control={control}
@@ -746,7 +746,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* Difficulty Level */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Controller
                   name="difficultyLevel"
                   control={control}
@@ -781,7 +781,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* CME Credits */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Controller
                   name="cmeCredits"
                   control={control}
@@ -802,7 +802,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </Grid>
 
               {/* Public/Private Toggle */}
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs: 12, md: 6}}>
                 <Controller
                   name="isPublic"
                   control={control}
@@ -824,7 +824,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               <Divider sx={{ width: '100%', my: 2 }} />
 
               {/* Action Buttons */}
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                   <Button
                     variant="outlined"

@@ -175,21 +175,19 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           horizontal: 'right',
         }}
       >
-        {userProfile && (
-          <>
-            <MenuItem disabled>
-              <Box>
-                <Typography variant="body2" fontWeight="bold">
-                  {userProfile.profile.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {getRoleDisplayName(userProfile.role)} • {userProfile.profile.hospital}
-                </Typography>
-              </Box>
-            </MenuItem>
-            <Divider />
-          </>
-        )}
+        {userProfile && [
+          <MenuItem key="profile-info" disabled>
+            <Box>
+              <Typography variant="body2" fontWeight="bold">
+                {userProfile.profile.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {getRoleDisplayName(userProfile.role)} • {userProfile.profile.hospital}
+              </Typography>
+            </Box>
+          </MenuItem>,
+          <Divider key="divider-1" />
+        ]}
         <MenuItem onClick={handleProfileClick}>
           <ListItemIcon>
             <AccountCircle fontSize="small" />

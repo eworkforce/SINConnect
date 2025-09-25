@@ -229,7 +229,7 @@ const Profile: React.FC = () => {
 
         <Grid container spacing={3}>
           {/* Profile Overview Card */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{xs: 12, md: 4}}>
             <Card>
               <CardContent>
                 <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
@@ -309,7 +309,7 @@ const Profile: React.FC = () => {
           </Grid>
 
           {/* Profile Details */}
-          <Grid item xs={12} md={8}>
+          <Grid size={{xs: 12, md: 8}}>
             <Card>
               <CardContent>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -328,7 +328,7 @@ const Profile: React.FC = () => {
 
                 <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{xs: 12, md: 6}}>
                       <Controller
                         name="name"
                         control={control}
@@ -348,7 +348,7 @@ const Profile: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{xs: 12, md: 6}}>
                       <Controller
                         name="hospital"
                         control={control}
@@ -368,7 +368,7 @@ const Profile: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{xs: 12, md: 6}}>
                       <Controller
                         name="specialization"
                         control={control}
@@ -385,7 +385,7 @@ const Profile: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{xs: 12, md: 6}}>
                       <Controller
                         name="region"
                         control={control}
@@ -402,7 +402,7 @@ const Profile: React.FC = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12}>
+                    <Grid size={12}>
                       <Controller
                         name="phoneNumber"
                         control={control}
@@ -423,7 +423,7 @@ const Profile: React.FC = () => {
                     </Grid>
 
                     {isEditing && (
-                      <Grid item xs={12}>
+                      <Grid size={12}>
                         <Button
                           type="submit"
                           variant="contained"
@@ -448,7 +448,7 @@ const Profile: React.FC = () => {
                 </Typography>
                 
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{xs: 12, md: 6}}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -460,7 +460,7 @@ const Profile: React.FC = () => {
                     />
                   </Grid>
                   
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{xs: 12, md: 6}}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -472,7 +472,7 @@ const Profile: React.FC = () => {
                     />
                   </Grid>
                   
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{xs: 12, md: 6}}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -484,7 +484,7 @@ const Profile: React.FC = () => {
                     />
                   </Grid>
                   
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{xs: 12, md: 6}}>
                     <FormControlLabel
                       control={
                         <Switch
