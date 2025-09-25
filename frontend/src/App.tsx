@@ -13,6 +13,8 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import Profile from "./pages/Profile/Profile";
+import Documents from "./pages/Documents/Documents";
+import UploadDocument from "./pages/Documents/UploadDocument";
 
 // Create Material-UI theme
 const theme = createTheme({
@@ -67,7 +69,15 @@ function App() {
               path="/documents" 
               element={
                 <ProtectedRoute>
-                  <div>Documents - Coming Soon</div>
+                  <Documents />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/documents/upload" 
+              element={
+                <ProtectedRoute>
+                  <UploadDocument />
                 </ProtectedRoute>
               } 
             />

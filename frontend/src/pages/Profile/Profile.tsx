@@ -6,7 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
@@ -15,14 +14,9 @@ import {
   CircularProgress,
   Avatar,
   Chip,
-  Divider,
   Card,
   CardContent,
   IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Switch,
   FormControlLabel,
 } from '@mui/material';

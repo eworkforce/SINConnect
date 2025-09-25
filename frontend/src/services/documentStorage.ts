@@ -11,16 +11,14 @@ import {
   getDownloadURL,
   deleteObject,
   getMetadata,
-  updateMetadata,
   listAll,
-  UploadTask,
 } from 'firebase/storage';
+import type { UploadTask } from 'firebase/storage';
 import { storage } from './firebase';
-import { 
+import type { 
   DocumentUploadProgress,
   DocumentCategory,
   SupportedFileType,
-  Document 
 } from '../types';
 
 // =============================================================================
@@ -227,7 +225,7 @@ export const uploadDocument = (
             estimatedTimeRemaining: calculateETA(
               snapshot.bytesTransferred, 
               snapshot.totalBytes, 
-              Date.now() - uploadTask.snapshot.metadata?.timeCreated
+              Date.now() - (uploadTask.snapshot.metadata?.timeCreated ? new Date(uploadTask.snapshot.metadata.timeCreated).getTime() : Date.now())
             ),
           });
         }
