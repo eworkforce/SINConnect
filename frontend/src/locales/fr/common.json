@@ -1,0 +1,59 @@
+{
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "documents": "Documents",
+    "forum": "Forum",
+    "profile": "Profil",
+    "logout": "Déconnexion",
+    "login": "Connexion",
+    "register": "S'inscrire"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "download": "Télécharger",
+    "upload": "Téléverser",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "submit": "Soumettre",
+    "close": "Fermer",
+    "open": "Ouvrir",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent"
+  },
+  "status": {
+    "loading": "Chargement...",
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Avertissement",
+    "info": "Information",
+    "pending": "En attente",
+    "completed": "Terminé",
+    "active": "Actif",
+    "inactive": "Inactif"
+  },
+  "common": {
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "welcome": "Bienvenue",
+    "title": "Titre",
+    "description": "Description",
+    "category": "Catégorie",
+    "tags": "Étiquettes",
+    "date": "Date",
+    "time": "Heure",
+    "name": "Nom",
+    "email": "Email",
+    "password": "Mot de passe",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "region": "Région",
+    "hospital": "Hôpital",
+    "specialization": "Spécialisation"
+  }
+}

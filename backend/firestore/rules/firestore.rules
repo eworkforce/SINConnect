@@ -1,0 +1,356 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =============================================================================
+    // HELPER FUNCTIONS
+    // =============================================================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Get user role from custom claims
+    function getUserRole() {
+      return request.auth.token.role;
+    }
+    
+    // Check specific roles
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isSpecialist() {
+      return isAuthenticated() && getUserRole() == 'specialist';
+    }
+    
+    function isAttendee() {
+      return isAuthenticated() && getUserRole() == 'attendee';
+    }
+    
+    function isStakeholder() {
+      return isAuthenticated() && getUserRole() == 'stakeholder';
+    }
+    
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user can read based on roles
+    function canReadByRole(allowedRoles) {
+      return isAuthenticated() && getUserRole() in allowedRoles;
+    }
+    
+    // Check if user has write permissions (admin or specialist)
+    function canWrite() {
+      return isAdmin() || isSpecialist();
+    }
+    
+    // Validate user role
+    function isValidRole(role) {
+      return role in ['attendee', 'specialist', 'admin', 'stakeholder'];
+    }
+    
+    // Check if data contains required fields
+    function hasRequiredUserFields() {
+      let requiredFields = ['email', 'role', 'profile', 'preferences', 'metadata'];
+      return requiredFields.toSet().difference(request.resource.data.keys().toSet()).size() == 0;
+    }
+    
+    // =============================================================================
+    // USER COLLECTION RULES
+    // =============================================================================
+    
+    match /users/{userId} {
+      // Users can read and update their own profile
+      allow read, update: if isOwner(userId);
+      
+      // Admins can read all user profiles
+      allow read: if isAdmin();
+      
+      // User creation during registration
+      allow create: if isAuthenticated() 
+        && request.auth.uid == userId
+        && hasRequiredUserFields()
+        && isValidRole(request.resource.data.role)
+        && request.resource.data.metadata.createdAt == request.time;
+      
+      // Only admins can delete users (soft delete by setting isActive: false)
+      allow update: if isAdmin() 
+        && request.resource.data.metadata.updatedAt == request.time;
+      
+      // Prevent direct role changes (must be done via Cloud Function)
+      allow update: if isOwner(userId) 
+        && (!request.resource.data.keys().hasAny(['role']))
+        || isAdmin();
+    }
+    
+    // =============================================================================
+    // DOCUMENT COLLECTION RULES
+    // =============================================================================
+    
+    match /documents/{documentId} {
+      // All authenticated users can read public documents
+      allow read: if isAuthenticated() && resource.data.access.isPublic;
+      
+      // Role-based access for restricted documents
+      allow read: if isAuthenticated() 
+        && getUserRole() in resource.data.access.allowedRoles;
+      
+      // Document creation - only specialists and admins
+      allow create: if canWrite()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.metadata.createdAt == request.time
+        && request.resource.data.version == 1;
+      
+      // Document updates - only by creator or admin
+      allow update: if (canWrite() && resource.data.createdBy == request.auth.uid)
+        || isAdmin()
+        && request.resource.data.metadata.updatedAt == request.time
+        && request.resource.data.version == resource.data.version + 1;
+      
+      // Document deletion - only admins
+      allow delete: if isAdmin();
+    }
+    
+    // =============================================================================
+    // DOCUMENT CATEGORIES COLLECTION RULES
+    // =============================================================================
+    
+    match /documentCategories/{categoryId} {
+      // All authenticated users can read categories
+      allow read: if isAuthenticated();
+      
+      // Only admins can manage categories
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // =============================================================================
+    // IMPACT METRICS COLLECTION RULES
+    // =============================================================================
+    
+    match /impactMetrics/{metricId} {
+      // Users can only access their own impact metrics
+      allow read, write: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid;
+      
+      // Creation validation
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.metadata.submittedAt == request.time;
+      
+      // Admins and stakeholders can read all metrics (for reporting)
+      allow read: if isAdmin() || isStakeholder();
+      
+      // Only admins can update any metrics (for data correction)
+      allow update: if isAdmin();
+      
+      // No deletion allowed (data integrity for healthcare reporting)
+      allow delete: if false;
+    }
+    
+    // =============================================================================
+    // FORUM POSTS COLLECTION RULES
+    // =============================================================================
+    
+    match /forumPosts/{postId} {
+      // All authenticated users can read forum posts
+      allow read: if isAuthenticated();
+      
+      // Users can create forum posts
+      allow create: if isAuthenticated()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.metadata.createdAt == request.time
+        && request.resource.data.metadata.viewCount == 0
+        && request.resource.data.metadata.replyCount == 0
+        && request.resource.data.metadata.upvoteCount == 0;
+      
+      // Users can update their own posts, specialists and admins can update any
+      allow update: if (isAuthenticated() && resource.data.authorId == request.auth.uid)
+        || canWrite()
+        || isAdmin();
+      
+      // Only admins can delete posts
+      allow delete: if isAdmin();
+    }
+    
+    // =============================================================================
+    // FORUM REPLIES COLLECTION RULES
+    // =============================================================================
+    
+    match /forumReplies/{replyId} {
+      // All authenticated users can read replies
+      allow read: if isAuthenticated();
+      
+      // Users can create replies
+      allow create: if isAuthenticated()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.metadata.createdAt == request.time
+        && request.resource.data.metadata.upvoteCount == 0;
+      
+      // Users can update their own replies, specialists and admins can update any
+      allow update: if (isAuthenticated() && resource.data.authorId == request.auth.uid)
+        || canWrite()
+        || isAdmin();
+      
+      // Specialists and admins can delete replies
+      allow delete: if canWrite() || isAdmin();
+    }
+    
+    // =============================================================================
+    // DIRECT MESSAGES COLLECTION RULES
+    // =============================================================================
+    
+    match /directMessages/{messageId} {
+      // Users can only read messages they sent or received
+      allow read: if isAuthenticated() 
+        && (resource.data.from == request.auth.uid 
+            || resource.data.to == request.auth.uid);
+      
+      // Users can send messages
+      allow create: if isAuthenticated()
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.metadata.sentAt == request.time
+        && request.resource.data.metadata.isRead == false;
+      
+      // Users can update read status of messages sent to them
+      allow update: if isAuthenticated() 
+        && resource.data.to == request.auth.uid
+        && request.resource.data.metadata.readAt == request.time;
+      
+      // Only admins can delete messages (for moderation)
+      allow delete: if isAdmin();
+    }
+    
+    // =============================================================================
+    // NOTIFICATIONS COLLECTION RULES
+    // =============================================================================
+    
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // System can create notifications (via Cloud Functions)
+      allow create: if isAuthenticated() && request.auth.uid == 'system';
+      
+      // Users can mark their notifications as read
+      allow update: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.metadata.readAt == request.time;
+      
+      // Users can delete their own notifications
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    // =============================================================================
+    // REPORTS COLLECTION RULES
+    // =============================================================================
+    
+    match /reports/{reportId} {
+      // Admins and stakeholders can read reports
+      allow read: if isAdmin() || isStakeholder();
+      
+      // Only admins can create and manage reports
+      allow create, update, delete: if isAdmin();
+    }
+    
+    match /reportTemplates/{templateId} {
+      // Admins can manage report templates
+      allow read, create, update, delete: if isAdmin();
+    }
+    
+    // =============================================================================
+    // ADMIN COLLECTIONS RULES
+    // =============================================================================
+    
+    match /auditLogs/{logId} {
+      // Only admins can read audit logs
+      allow read: if isAdmin();
+      
+      // System creates audit logs (via Cloud Functions)
+      allow create: if isAuthenticated();
+      
+      // No updates or deletes allowed (immutable audit trail)
+      allow update, delete: if false;
+    }
+    
+    match /systemSettings/{settingId} {
+      // Only admins can manage system settings
+      allow read, create, update, delete: if isAdmin();
+    }
+    
+    // =============================================================================
+    // EMAIL TEMPLATES COLLECTION RULES
+    // =============================================================================
+    
+    match /emailTemplates/{templateId} {
+      // Admins can manage email templates
+      allow read, create, update, delete: if isAdmin();
+    }
+    
+    // =============================================================================
+    // ANALYTICS COLLECTIONS RULES
+    // =============================================================================
+    
+    match /userActivity/{activityId} {
+      // System creates activity logs
+      allow create: if isAuthenticated();
+      
+      // Users can read their own activity
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Admins can read all activity
+      allow read: if isAdmin();
+      
+      // No updates or deletes (immutable logs)
+      allow update, delete: if false;
+    }
+    
+    match /platformMetrics/{date} {
+      // Admins and stakeholders can read platform metrics
+      allow read: if isAdmin() || isStakeholder();
+      
+      // System updates metrics (via Cloud Functions)
+      allow create, update: if isAuthenticated();
+      
+      // No deletion of metrics
+      allow delete: if false;
+    }
+    
+    // =============================================================================
+    // FILE UPLOADS COLLECTION RULES
+    // =============================================================================
+    
+    match /fileUploads/{uploadId} {
+      // Users can read their own uploads
+      allow read: if isAuthenticated() && resource.data.uploadedBy == request.auth.uid;
+      
+      // Admins can read all uploads
+      allow read: if isAdmin();
+      
+      // Users can create uploads
+      allow create: if isAuthenticated()
+        && request.resource.data.uploadedBy == request.auth.uid
+        && request.resource.data.uploadedAt == request.time;
+      
+      // System can update processing status
+      allow update: if isAuthenticated()
+        && request.resource.data.uploadedBy == resource.data.uploadedBy;
+      
+      // Users can delete their own uploads, admins can delete any
+      allow delete: if (isAuthenticated() && resource.data.uploadedBy == request.auth.uid)
+        || isAdmin();
+    }
+    
+    // =============================================================================
+    // DEFAULT DENY RULE
+    // =============================================================================
+    
+    // Deny access to any other collections not explicitly defined
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
