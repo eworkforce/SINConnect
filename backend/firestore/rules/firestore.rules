@@ -11,9 +11,9 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Get user role from custom claims
+    // Get user role from user profile document
     function getUserRole() {
-      return request.auth.token.role;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
     
     // Check specific roles

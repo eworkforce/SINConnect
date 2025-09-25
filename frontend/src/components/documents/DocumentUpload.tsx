@@ -48,11 +48,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDropzone } from 'react-dropzone';
 import {
-  uploadDocument,
   validateFileType,
   validateFileSize,
   formatFileSize,
 } from '../../services/documentStorage';
+import { uploadDocumentWithMetadata } from '../../services/documentService';
 import {
   DOCUMENT_CATEGORIES,
   DOCUMENT_PRIORITY_CONFIG,
@@ -97,6 +97,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const [showMetadataForm, setShowMetadataForm] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordInput, setKeywordInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get user permissions
@@ -124,6 +126,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       summary: '',
       category: defaultCategory || availableCategories[0] || 'training-materials',
       tags: [],
+      keywords: [], // Add keywords field
       priority: 'normal',
       language: 'fr',
       medicalSpecialty: [],
@@ -254,6 +257,23 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     setValue('tags', newTags);
   };
 
+  // Add keyword
+  const addKeyword = () => {
+    if (keywordInput.trim() && keywords.length < 20 && !keywords.includes(keywordInput.trim())) {
+      const newKeywords = [...keywords, keywordInput.trim()];
+      setKeywords(newKeywords);
+      setValue('keywords', newKeywords);
+      setKeywordInput('');
+    }
+  };
+
+  // Remove keyword
+  const removeKeyword = (keywordToRemove: string) => {
+    const newKeywords = keywords.filter(keyword => keyword !== keywordToRemove);
+    setKeywords(newKeywords);
+    setValue('keywords', newKeywords);
+  };
+
 
   // Get file icon based on type
   const getFileIcon = (file: File) => {
@@ -275,32 +295,70 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
   // Upload files
   const handleUpload = async (formData: any) => {
+    console.log('\n=== UPLOAD HANDLER CALLED ===');
+    console.log('🚀 Upload started with form data:', formData);
+    console.log('📁 Files to upload:', uploadFiles);
+    console.log('🔐 User permissions:', userPermissions);
+    
     if (!userPermissions?.canUpload) {
-      onUploadError?.('Vous n\'avez pas l\'autorisation de télécharger des documents');
+      const errorMsg = 'Vous n\'avez pas l\'autorisation de télécharger des documents';
+      console.error('❌ Permission error:', errorMsg);
+      onUploadError?.(errorMsg);
       return;
     }
 
     const validFiles = uploadFiles.filter(f => !f.progress.error);
     if (validFiles.length === 0) {
-      onUploadError?.('Aucun fichier valide à télécharger');
+      const errorMsg = 'Aucun fichier valide à télécharger';
+      console.error('❌ No valid files:', errorMsg);
+      onUploadError?.(errorMsg);
       return;
     }
 
+    console.log('✅ Starting upload for', validFiles.length, 'files');
     setIsUploading(true);
     const completedDocumentIds: string[] = [];
 
     try {
       // Upload files one by one (could be parallel for better performance)
       for (const uploadFile of validFiles) {
-        const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log('📤 Uploading file:', uploadFile.file.name);
         
         try {
-          await uploadDocument(
+          // Prepare document metadata
+          const documentMetadata = {
+            title: formData.title,
+            description: formData.description,
+            summary: formData.summary || '',
+            category: formData.category,
+            tags: formData.tags || [],
+            keywords: formData.keywords || [],
+            priority: formData.priority,
+            language: formData.language,
+            medicalSpecialty: formData.medicalSpecialty || [],
+            targetAudience: formData.targetAudience || ['attendee'],
+            difficultyLevel: formData.difficultyLevel,
+            cmeCredits: formData.cmeCredits || 0,
+            medicalDisclaimer: formData.medicalDisclaimer || '',
+            clinicalEvidence: formData.clinicalEvidence || '',
+            authorCredentials: formData.authorCredentials || '',
+            access: {
+              isPublic: formData.isPublic || false,
+              allowedRoles: formData.allowedRoles || ['attendee', 'specialist', 'admin'],
+              requiresApproval: formData.requiresApproval !== false,
+            },
+            version: 1,
+            status: 'draft' as const,
+          };
+          
+          console.log('📋 Document metadata prepared:', documentMetadata);
+          
+          const result = await uploadDocumentWithMetadata(
             uploadFile.file,
-            formData.category,
-            documentId,
-            '1.0',
+            documentMetadata,
+            userProfile!.id,
             (progress) => {
+              console.log('📊 Upload progress for', uploadFile.file.name, ':', progress);
               setUploadFiles(prev => prev.map(f => 
                 f.id === uploadFile.id 
                   ? { ...f, progress }
@@ -308,6 +366,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               ));
             }
           );
+          
+          console.log('✅ Upload successful for', uploadFile.file.name, ':', result);
 
           // Mark as completed
           setUploadFiles(prev => prev.map(f => 
@@ -315,15 +375,16 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
               ? { 
                   ...f, 
                   completed: true, 
-                  documentId,
+                  documentId: result.documentId,
                   progress: { ...f.progress, status: 'completed', progress: 100 }
                 }
               : f
           ));
 
-          completedDocumentIds.push(documentId);
+          completedDocumentIds.push(result.documentId);
 
         } catch (error: any) {
+          console.error('❌ Upload failed for', uploadFile.file.name, ':', error);
           // Mark individual file as error
           setUploadFiles(prev => prev.map(f => 
             f.id === uploadFile.id 
@@ -345,11 +406,13 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           setUploadFiles([]);
           setShowMetadataForm(false);
           setTags([]);
+          setKeywords([]);
           reset();
         }, 2000);
       }
 
     } catch (error: any) {
+      console.error('❌ General upload error:', error);
       onUploadError?.(error.message || 'Erreur lors du téléchargement');
     } finally {
       setIsUploading(false);
@@ -539,7 +602,25 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             Informations du document
           </Typography>
 
-          <Box component="form" onSubmit={handleSubmit(handleUpload)}>
+          <Box component="form" onSubmit={(e) => {
+            console.log('📝 Form submitted!');
+            console.log('📋 Form event:', e);
+            console.log('🔍 Form validation errors:', errors);
+            console.log('📊 Form valid?', Object.keys(errors).length === 0);
+            
+            const result = handleSubmit(
+              (data) => {
+                console.log('🎯 handleSubmit callback called with data:', data);
+                return handleUpload(data);
+              },
+              (errors) => {
+                console.error('❌ Form validation failed:', errors);
+              }
+            )(e);
+            
+            console.log('📤 handleSubmit result:', result);
+            return result;
+          }}>
             <Grid container spacing={3}>
               {/* Title */}
               <Grid size={12}>
@@ -708,6 +789,48 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                 </Box>
               </Grid>
 
+              {/* Keywords */}
+              <Grid size={12}>
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Mots-clés ({keywords.length}/20)
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    {keywords.map((keyword) => (
+                      <Chip
+                        key={keyword}
+                        label={keyword}
+                        onDelete={() => removeKeyword(keyword)}
+                        size="small"
+                        disabled={isUploading}
+                        color="secondary"
+                      />
+                    ))}
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      size="small"
+                      label="Ajouter un mot-clé"
+                      value={keywordInput}
+                      onChange={(e) => setKeywordInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
+                      disabled={isUploading || keywords.length >= 20}
+                      helperText="Mots-clés techniques ou concepts spécifiques"
+                    />
+                    <Button
+                      onClick={addKeyword}
+                      disabled={!keywordInput.trim() || isUploading || keywords.length >= 20}
+                      variant="outlined"
+                      size="small"
+                    >
+                      Ajouter
+                    </Button>
+                  </Box>
+                </Box>
+              </Grid>
+
               {/* Medical Specialties */}
               <Grid size={{xs: 12, md: 6}}>
                 <Controller
@@ -839,6 +962,24 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     variant="contained"
                     disabled={isUploading || uploadFiles.every(f => f.progress.error)}
                     startIcon={isUploading ? <LinearProgress /> : <CloudUpload />}
+                    onClick={(e) => {
+                      console.log('🖱️ Upload button clicked!');
+                      console.log('🔴 Is uploading:', isUploading);
+                      console.log('🔄 Upload files:', uploadFiles);
+                      console.log('🚫 Button disabled?', (isUploading || uploadFiles.every(f => f.progress.error)));
+                      console.log('🔍 Current form values:', control._formValues);
+                      console.log('⚠️ Form errors:', errors);
+                      
+                      // Check if button is actually disabled
+                      if (isUploading || uploadFiles.every(f => f.progress.error)) {
+                        console.log('🙅 Button is disabled - not proceeding');
+                        e.preventDefault();
+                        return;
+                      }
+                      
+                      console.log('✅ Button click proceeding to form submission...');
+                      // Let form submission handle the rest
+                    }}
                   >
                     {isUploading ? 'Téléchargement...' : 'Télécharger les documents'}
                   </Button>

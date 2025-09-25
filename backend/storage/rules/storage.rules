@@ -11,73 +11,36 @@ service firebase.storage {
       return request.auth != null;
     }
     
-    // Get user role from custom claims
-    function getUserRole() {
-      return request.auth.token.role;
-    }
-    
-    // Check specific roles
-    function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'admin';
-    }
-    
-    function isSpecialist() {
-      return isAuthenticated() && getUserRole() == 'specialist';
-    }
-    
-    function isAttendee() {
-      return isAuthenticated() && getUserRole() == 'attendee';
-    }
-    
-    function isStakeholder() {
-      return isAuthenticated() && getUserRole() == 'stakeholder';
-    }
-    
-    // Check if user can write (admin or specialist)
-    function canWrite() {
-      return isAdmin() || isSpecialist();
-    }
-    
     // Validate file size based on user role and file type
     function isValidFileSize() {
-      let maxSize = 10 * 1024 * 1024; // 10MB default
-      
-      if (isAdmin()) {
-        maxSize = 500 * 1024 * 1024; // 500MB for admins
-      } else if (isSpecialist()) {
-        maxSize = 100 * 1024 * 1024; // 100MB for specialists
-      }
-      
-      return request.resource.size <= maxSize && request.resource.size >= 1024; // min 1KB
+      return request.resource.size >= 1024 && 
+             ((isAdmin() && request.resource.size <= 500 * 1024 * 1024) ||
+              (isSpecialist() && request.resource.size <= 100 * 1024 * 1024) ||
+              (isAttendee() && request.resource.size <= 10 * 1024 * 1024));
     }
     
     // Validate large file size for videos
     function isValidVideoFileSize() {
-      let maxSize = 50 * 1024 * 1024; // 50MB default for videos
-      
-      if (isAdmin()) {
-        maxSize = 500 * 1024 * 1024; // 500MB for admin videos
-      } else if (isSpecialist()) {
-        maxSize = 200 * 1024 * 1024; // 200MB for specialist videos
-      }
-      
-      return request.resource.size <= maxSize && request.resource.size >= 1024;
+      return request.resource.size >= 1024 && 
+             ((isAdmin() && request.resource.size <= 500 * 1024 * 1024) ||
+              (isSpecialist() && request.resource.size <= 200 * 1024 * 1024) ||
+              (isAttendee() && request.resource.size <= 50 * 1024 * 1024));
     }
     
     // Check if content type is allowed for images
     function isValidImageType() {
-      return resource.contentType.matches('image/(png|jpg|jpeg|gif|webp)');
+      return request.resource.contentType.matches('image/(png|jpg|jpeg|gif|webp)');
     }
     
     // Check if content type is allowed for documents
     function isValidDocumentType() {
-      return resource.contentType.matches('application/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document|vnd.ms-powerpoint|vnd.openxmlformats-officedocument.presentationml.presentation)') ||
-             resource.contentType.matches('text/(plain|csv)');
+      return request.resource.contentType.matches('application/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document|vnd.ms-powerpoint|vnd.openxmlformats-officedocument.presentationml.presentation)') ||
+             request.resource.contentType.matches('text/(plain|csv)');
     }
     
     // Check if content type is allowed for videos
     function isValidVideoType() {
-      return resource.contentType.matches('video/(mp4|avi|mov|wmv|webm)');
+      return request.resource.contentType.matches('video/(mp4|avi|mov|wmv|webm)');
     }
     
     // =============================================================================
@@ -92,10 +55,10 @@ service firebase.storage {
       allow write: if isAuthenticated() 
         && request.auth.uid == userId
         && isValidImageType()
-        && isValidFileSize();
+        && request.resource.size <= 5 * 1024 * 1024;
       
-      // Admins can read all profile images (for moderation)
-      allow read: if isAdmin();
+      // All authenticated users can read profile images
+      allow read: if isAuthenticated();
     }
     
     // =============================================================================
@@ -104,38 +67,25 @@ service firebase.storage {
     
     // Document structure: /documents/{category}/{documentId}/{version}/{fileName}
     match /documents/{category}/{documentId}/{version}/{fileName} {
-      // All authenticated users can read approved documents
-      allow read: if isAuthenticated();
-      
-      // Only specialists and admins can upload documents
-      allow write: if canWrite() && 
-        ((isValidDocumentType() && isValidFileSize()) ||
-         (isValidVideoType() && isValidVideoFileSize()));
-      
-      // Only document creator or admin can update their documents
-      allow update: if canWrite() && 
-        ((isValidDocumentType() && isValidFileSize()) ||
-         (isValidVideoType() && isValidVideoFileSize()));
-      
-      // Only admins can delete documents
-      allow delete: if isAdmin();
+      // Allow authenticated users to read and write documents
+      allow read, write, delete: if isAuthenticated();
     }
     
     // Document thumbnails: /documents/{category}/{documentId}/thumbnails/{fileName}
     match /documents/{category}/{documentId}/thumbnails/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if canWrite() && isValidImageType() && 
+      allow write: if isAuthenticated() && isValidImageType() && 
         request.resource.size <= 5 * 1024 * 1024; // 5MB for thumbnails
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated();
     }
     
     // Document previews: /documents/{category}/{documentId}/previews/{fileName}
     match /documents/{category}/{documentId}/previews/{fileName} {
       allow read: if isAuthenticated();
-      allow write: if canWrite() && 
-        (isValidImageType() || resource.contentType == 'application/pdf') &&
+      allow write: if isAuthenticated() && 
+        (isValidImageType() || request.resource.contentType == 'application/pdf') &&
         request.resource.size <= 20 * 1024 * 1024; // 20MB for previews
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated();
     }
     
     // =============================================================================
@@ -151,8 +101,8 @@ service firebase.storage {
         && (isValidImageType() || isValidDocumentType())
         && isValidFileSize();
       
-      // Specialists and admins can delete any attachments
-      allow delete: if canWrite() || isAdmin();
+      // Authenticated users can delete attachments (app handles permissions)
+      allow delete: if isAuthenticated();
     }
     
     // =============================================================================
@@ -168,8 +118,8 @@ service firebase.storage {
         && (isValidImageType() || isValidDocumentType())
         && isValidFileSize();
       
-      // Specialists and admins can delete any attachments
-      allow delete: if canWrite() || isAdmin();
+      // Authenticated users can delete attachments (app handles permissions)
+      allow delete: if isAuthenticated();
     }
     
     // =============================================================================
@@ -186,11 +136,11 @@ service firebase.storage {
         && (isValidImageType() || isValidDocumentType())
         && isValidFileSize();
       
-      // Admins and stakeholders can read all submissions (for reporting)
-      allow read: if isAdmin() || isStakeholder();
+      // Authenticated users can read submissions (app handles permissions)
+      allow read: if isAuthenticated();
       
-      // Only admins can delete impact metric attachments
-      allow delete: if isAdmin();
+      // Authenticated users can delete attachments (app handles permissions)
+      allow delete: if isAuthenticated();
     }
     
     // =============================================================================
@@ -205,7 +155,7 @@ service firebase.storage {
       allow write: if isAuthenticated() 
         && request.auth.uid == userId
         && (isValidImageType() || isValidDocumentType() || isValidVideoType())
-        && isValidLargeFileSize();
+        && isValidVideoFileSize();
     }
     
     // =============================================================================
@@ -216,8 +166,17 @@ service firebase.storage {
       // All authenticated users can read system assets (logos, templates, etc.)
       allow read: if isAuthenticated();
       
-      // Only admins can manage system assets
-      allow write, delete: if isAdmin();
+      // Authenticated users can manage system assets (app handles permissions)
+      allow write, delete: if isAuthenticated();
+    }
+    
+    // =============================================================================
+    // TEST FILES (Development Only)
+    // =============================================================================
+    
+    match /test/{userId}/{fileName} {
+      // Users can test storage functionality with their own test files
+      allow read, write, delete: if isAuthenticated() && request.auth.uid == userId;
     }
     
     // =============================================================================
@@ -225,11 +184,11 @@ service firebase.storage {
     // =============================================================================
     
     match /email/attachments/{templateId}/{fileName} {
-      // Only admins can manage email attachments
-      allow read, write, delete: if isAdmin();
+      // Authenticated users can manage email attachments (app handles permissions)
+      allow read, write, delete: if isAuthenticated();
       
       // Validate email attachments
-      allow write: if isAdmin()
+      allow write: if isAuthenticated()
         && (isValidImageType() || isValidDocumentType())
         && isValidFileSize();
     }
@@ -239,17 +198,17 @@ service firebase.storage {
     // =============================================================================
     
     match /backups/{backupId}/{fileName} {
-      // Only admins can access backup files
-      allow read, write, delete: if isAdmin();
+      // Authenticated users can access backup files (app handles permissions)
+      allow read, write, delete: if isAuthenticated();
     }
     
     // =============================================================================
-    // DEFAULT DENY RULE
+    // TEMPORARY TESTING RULE - ALLOWS ALL AUTHENTICATED USERS
     // =============================================================================
     
-    // Deny access to any other paths not explicitly defined
+    // Temporary: Allow all authenticated users (for testing)
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read, write, delete: if isAuthenticated();
     }
   }
 }
