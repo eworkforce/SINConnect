@@ -11,5 +11,21 @@ export default defineConfig({
       port: 5173,
       clientPort: 5173
     }
+  },
+  optimizeDeps: {
+    include: ['pdfjs-dist']
+  },
+  assetsInclude: ['**/*.pdf'],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'pdfjs': ['pdfjs-dist']
+        }
+      }
+    }
+  },
+  worker: {
+    format: 'es'
   }
 })

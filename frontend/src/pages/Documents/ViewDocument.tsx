@@ -53,8 +53,8 @@ import { useDocument } from '../../hooks/useDocument';
 import { incrementDownloadCount } from '../../services/documentService';
 import type { DocumentCategory } from '../../types';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Configure PDF.js worker - use local worker file to avoid CORS issues
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 // Helper function to get category icon
 const getCategoryIcon = (category: DocumentCategory) => {
