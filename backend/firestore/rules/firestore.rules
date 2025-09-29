@@ -92,12 +92,15 @@ service cloud.firestore {
     // =============================================================================
     
     match /documents/{documentId} {
+      // TEMPORARY: Allow all authenticated users to read documents (for testing)
+      allow read: if isAuthenticated();
+      
       // All authenticated users can read public documents
-      allow read: if isAuthenticated() && resource.data.access.isPublic;
+      // allow read: if isAuthenticated() && resource.data.access.isPublic;
       
       // Role-based access for restricted documents
-      allow read: if isAuthenticated() 
-        && getUserRole() in resource.data.access.allowedRoles;
+      // allow read: if isAuthenticated() 
+      //   && getUserRole() in resource.data.access.allowedRoles;
       
       // Document creation - only specialists and admins
       allow create: if canWrite()

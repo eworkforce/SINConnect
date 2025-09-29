@@ -4,10 +4,13 @@
 
 ## **📋 Project Overview**
 
-The StrokeTraining Platform is a web-based knowledge platform designed to support healthcare professionals in Côte d'Ivoire through continuous education and collaboration. It serves as the primary learning and impact measurement tool for the stroke care training program led by NGO AVC Espoir.
+The StrokeTraining Platform is a web-based knowledge platform designed to 
+support healthcare professionals in Côte d'Ivoire through continuous education and collaboration. 
+It serves as the primary learning and impact measurement tool for the stroke care training program led by NGO AVC Espoir.
 
 ### **🎯 Vision**
-> Build a sustainable ecosystem for knowledge sharing and performance measurement in stroke care, creating a community of learners dedicated to improving patient outcomes.
+> Build a sustainable ecosystem for knowledge sharing and performance measurement in stroke care, creating a community 
+of learners dedicated to improving patient outcomes.
 
 ### **👥 Target Users**
 - **Attendees**: Generalist doctors who completed AVC Espoir training

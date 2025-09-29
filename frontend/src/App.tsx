@@ -15,6 +15,8 @@ import Register from "./pages/Register/Register";
 import Profile from "./pages/Profile/Profile";
 import Documents from "./pages/Documents/Documents";
 import UploadDocument from "./pages/Documents/UploadDocument";
+import BrowseDocuments from "./pages/Documents/BrowseDocuments";
+import ViewDocument from "./pages/Documents/ViewDocument";
 
 // Create Material-UI theme
 const theme = createTheme({
@@ -78,6 +80,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UploadDocument />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/documents/browse" 
+              element={
+                <ProtectedRoute>
+                  <BrowseDocuments />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/documents/view/:id" 
+              element={
+                <ProtectedRoute>
+                  <ViewDocument />
                 </ProtectedRoute>
               } 
             />

@@ -19,8 +19,8 @@ import {
 import { firestore } from './firebase';
 import { 
   uploadDocument as uploadToStorage, 
-  deleteDocument as deleteFromStorage,
-  getDocumentDownloadURL 
+  deleteDocument as deleteFromStorage
+  // getDocumentDownloadURL - will be used in Phase 3
 } from './documentStorage';
 import type { 
   DocumentUploadProgress,
@@ -38,6 +38,7 @@ interface DocumentMetadata {
   summary?: string;
   category: DocumentCategory;
   tags: string[];
+  keywords: string[]; // For search optimization
   priority: DocumentPriority;
   
   // File information
@@ -189,26 +190,68 @@ export const getDocuments = async (filters?: {
   try {
     let q = collection(firestore, 'documents');
     
-    // Apply filters if provided
-    if (filters?.category) {
-      q = query(q as any, where('category', '==', filters.category)) as any;
-    }
-    if (filters?.status) {
+    // TEMPORARY: Simplified query while indexes are building
+    // Just get all documents for now, filter client-side if needed
+    console.log('🔍 Using simplified query (indexes may still be building)...');
+    
+    // Apply filters if provided (but be careful about composite queries)
+    if (filters?.status && !filters?.category && !filters?.createdBy) {
+      // Simple single-field filter
       q = query(q as any, where('status', '==', filters.status)) as any;
-    }
-    if (filters?.createdBy) {
+    } else if (filters?.category && !filters?.status && !filters?.createdBy) {
+      // Simple single-field filter
+      q = query(q as any, where('category', '==', filters.category)) as any;
+    } else if (filters?.createdBy && !filters?.status && !filters?.category) {
+      // Simple single-field filter
       q = query(q as any, where('createdBy', '==', filters.createdBy)) as any;
     }
+    // If multiple filters, skip filtering for now and get all documents
     
-    // Add ordering
-    q = query(q as any, orderBy('createdAt', 'desc')) as any;
+    // Add ordering only if no filters (to avoid composite index requirement)
+    if (!filters?.status && !filters?.category && !filters?.createdBy) {
+      q = query(q as any, orderBy('createdAt', 'desc')) as any;
+    }
     
     const querySnapshot = await getDocs(q as any);
     
-    return querySnapshot.docs.map(doc => ({
+    let documents = querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...(doc.data() as any)
     })) as DocumentMetadata[];
+    
+    // Client-side filtering when we can't use composite indexes
+    if (filters) {
+      documents = documents.filter(doc => {
+        let matches = true;
+        
+        if (filters.status && doc.status !== filters.status) {
+          matches = false;
+        }
+        if (filters.category && doc.category !== filters.category) {
+          matches = false;
+        }
+        if (filters.createdBy && doc.createdBy !== filters.createdBy) {
+          matches = false;
+        }
+        
+        return matches;
+      });
+      
+      // Client-side sorting by createdAt
+      documents.sort((a, b) => {
+        const aTime = a.createdAt?.toDate?.() || new Date(a.createdAt || 0);
+        const bTime = b.createdAt?.toDate?.() || new Date(b.createdAt || 0);
+        return bTime.getTime() - aTime.getTime(); // Descending order
+      });
+      
+      // Apply limit
+      if (filters.limit) {
+        documents = documents.slice(0, filters.limit);
+      }
+    }
+    
+    console.log(`📊 Found ${documents.length} documents after filtering`);
+    return documents;
   } catch (error) {
     console.error('Error fetching documents:', error);
     return [];
@@ -247,7 +290,7 @@ export const updateDocumentStatus = async (
  */
 export const deleteDocument = async (
   documentId: string,
-  userId: string
+  _userId: string // Will be used for audit logging in future
 ): Promise<void> => {
   try {
     // Get document metadata first

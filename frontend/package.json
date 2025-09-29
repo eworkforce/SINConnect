@@ -17,6 +17,7 @@
     "@mui/material": "^7.3.2",
     "@mui/material-nextjs": "^7.3.2",
     "chart.js": "^4.5.0",
+    "date-fns": "^4.1.0",
     "firebase": "^12.3.0",
     "i18next": "^25.5.2",
     "react": "^19.1.1",

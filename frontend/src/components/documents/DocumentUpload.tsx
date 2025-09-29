@@ -349,6 +349,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
             },
             version: 1,
             status: 'draft' as const,
+            createdBy: userProfile!.id,
           };
           
           console.log('📋 Document metadata prepared:', documentMetadata);
